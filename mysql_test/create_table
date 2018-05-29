@@ -1,0 +1,5 @@
+create table table_name(
+    name varchar(15) not null
+)ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
+show variables like "character%";
+set bianliangming=utf8;
