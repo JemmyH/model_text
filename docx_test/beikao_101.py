@@ -1,7 +1,8 @@
 # coding:utf-8
+__author__ = 'Jemmy'
 import requests
 import json
-from random import sample
+from random import randint
 
 header = {
     'Accept':
@@ -115,12 +116,18 @@ def get_detail(total_id):
 
 def get_json(result):
     fir = ['华北', '东北', '华东']
-    # sec = ['华中','华南','西南','西北']
+    sec = ['华中', '华南', '西南', '西北']
     judge = []
     singal = []
     multi = []
-    firs = [[], [], []]
-    secs = [[], [], []]
+    # firs = [[], [], []]
+    # secs = [[], [], []]
+    fir_singal = []
+    fir_judge = []
+    fir_multi = []
+    sec_singal = []
+    sec_judge = []
+    sec_multi = []
     for i in result:
         for j in i:
             if j['Question']['QuestionType'] == 10:
@@ -136,11 +143,11 @@ def get_json(result):
                 tmp['options'] = j['Question']['SubItems'][0]['Options']
                 singal.append(tmp)
                 if tmp['area'] in fir:
-                    firs[0].append(tmp)
-                else:
-                    secs[0].append(tmp)
-
-
+                    print("××××××××××××××××××××××××××")
+                    fir_singal.append(tmp)
+                elif tmp['area'] in sec:
+                    print("##########################")
+                    sec_singal.append(tmp)
             elif j['Question']['QuestionType'] == 30:
                 # 判断题
                 tmp = {}
@@ -154,9 +161,10 @@ def get_json(result):
                 # tmp['options'] = j['Question']['SubItems'][0]['Options']  # 选择题没有选项
                 judge.append(tmp)
                 if tmp['area'] in fir:
-                    firs[1].append(tmp)
-                else:
-                    secs[1].append(tmp)
+                    print("××××××××××××××××××××××××××")
+                    fir_judge.append(tmp)
+                elif tmp['area'] in sec:
+                    sec_judge.append(tmp)
             else:
                 # 多选题
                 tmp = {}
@@ -170,36 +178,42 @@ def get_json(result):
                 tmp['options'] = j['Question']['SubItems'][0]['Options']
                 multi.append(tmp)
                 if tmp['area'] in fir:
-                    firs[2].append(tmp)
-                else:
-                    secs[2].append(tmp)
-    # a = sample(singal, 80)
-    # b = sample(judge, 40)
-    # c = sample(multi, 40)
-    write_to_file(singal, '单选')
-    write_to_file(judge, '判断')
-    write_to_file(multi, '多选')
+                    fir_multi.append(tmp)
+                elif tmp['area'] in sec:
+                    sec_multi.append(tmp)
 
-    a_fir = sample(firs[0], 80)
-    b_fir = sample(firs[1], 40)
-    c_fir = sample(firs[2], 40)
-    create_file(a_fir, b_fir, c_fir, 1, '试卷一')  # 1代表给学生
-    a_sec = sample(secs[0], 80)
-    b_sec = sample(secs[1], 40)
-    c_sec = sample(secs[2], 40)
-    create_file(a_sec, b_sec, c_sec, 2, '试卷一（带答案）')  # 2代表给老师
+    # 这里生成两份试卷
+    generate_paper(fir_singal, fir_multi, fir_judge)
+    generate_paper(sec_singal, sec_multi, sec_judge)
 
-    a_fir = sample(firs[0], 80)
-    b_fir = sample(firs[1], 40)
-    c_fir = sample(firs[2], 40)
-    create_file(a_fir, b_fir, c_fir, 1, '试卷二')  # 1代表给学生
-    a_sec = sample(secs[0], 80)
-    b_sec = sample(secs[1], 40)
-    c_sec = sample(secs[2], 40)
-    create_file(a_sec, b_sec, c_sec, 2, '试卷二（带答案）')  # 2代表给老师
+    # 这里将分类后的题型写入文件
+    write_to_file(fir_singal, '第一类单选')
+    write_to_file(fir_multi, '第一类多选')
+    write_to_file(fir_judge, '第一类判断')
+    write_to_file(sec_singal, '第二类单选')
+    write_to_file(sec_multi, '第二类多选')
+    write_to_file(sec_judge, '第二类判断')
 
 
-def create_file(singal, judge, multi, flag, filename):
+def generate_paper(singal, multi, judge):
+    a_fir = get_random_list(singal, 80)
+    b_fir = get_random_list(multi, 40)
+    c_fir = get_random_list(judge, 40)
+    create_file(a_fir, b_fir, c_fir, 1, '试卷三')  # 1代表给学生
+    create_file(a_fir, b_fir, c_fir, 2, '试卷三（带答案）')  # 1代表给学生
+
+
+def get_random_list(alist, num):
+    l = len(alist)
+    tmp = []
+    for i in range(num):
+        # Return random integer in range [a, b], including both end points.
+        k = randint(0, l - 1)
+        tmp.append(alist[k])
+    return tmp
+
+
+def create_file(singal, multi, judge, flag, filename):
     option_dict = {
         1: 'A',
         2: 'B',
@@ -215,7 +229,7 @@ def create_file(singal, judge, multi, flag, filename):
             f.write("{}. {}\n".format(text_num, i['title']))
             text_num += 1
             for j, k in enumerate(i['options']):
-                f.write("{}. {}\n".format(option_dict[j+1], k))
+                f.write("{}. {}\n".format(option_dict[j + 1], k))
             # 在这里添加正确答案以及解析
             if flag == 2:
                 f.write("【答案】{}\n".format(i['answer']))
@@ -227,7 +241,7 @@ def create_file(singal, judge, multi, flag, filename):
             f.write("{}. {}\n".format(text_num, i['title']))
             text_num += 1
             for j, k in enumerate(i['options']):
-                f.write("{}. {}\n".format(option_dict[j+1], k))
+                f.write("{}. {}\n".format(option_dict[j + 1], k))
             if flag == 2:
                 f.write("【答案】{}\n".format(i['answer']))
                 f.write(("【解析】{}\n".format(i['explation'])))
@@ -243,7 +257,7 @@ def create_file(singal, judge, multi, flag, filename):
 
 
 def write_to_file(alist, name):
-       with open("/home/hujiaming/文档/{}.json".format(name), 'w') as f1:
+    with open("/home/hujiaming/文档/{}.json".format(name), 'w') as f1:
         for i in alist:
             json.dump(i, f1, ensure_ascii=False)
             f1.write(',\n')
