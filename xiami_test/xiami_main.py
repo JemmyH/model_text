@@ -1,10 +1,17 @@
 # _*_ coding:utf-8 _*_
+__author__ = 'JemmyH'
 import numpy as np
 import requests
 import json
 import urllib.parse
 import random
-
+"""
+脚本用途：将虾米音乐网站上的任何一首歌下载到本地
+脚本环境：python3.6
+依赖包：如上import，scylla(scylla的安装见同目录下的use_scylla.md)
+难度：四颗星（涉及到了加密算法——凯撒加密，笔者也是参考了网上一篇文章https://blog.csdn.net/qq_22821275/article/details/78614464，
+      但可能由于时间原因，本文所使用的解密方式与该文中略有不同，具体体现在对url的解析中。_from_location_to_url()花费了笔者较多时间）
+"""
 header = {
     # ':authority': 'www.xiami.com',
     # ':method': 'GET',
@@ -22,7 +29,7 @@ header = {
 
 class Xiami(object):
     def __init__(self, url):
-        self.proxy_list = requests.get("http://localhost:8899/api/v1/proxies").json()
+        self.proxy_list = requests.get("http://localhost:8899/api/v1/proxies").json()  # 这里使用了Python3.6专用的代理IP包scylla，具体操作请看use_scylla.md
         self.path = '/home/hujiaming/Music/'  # 本地存储路径（后面带"/"）
         self.url = url
 
@@ -39,7 +46,7 @@ class Xiami(object):
             self.download(url)
 
     def _get_location(self):
-        random_proxy = random.choice(self.proxy_list['proxies'])
+        random_proxy = random.choice(self.proxy_list['proxies'])  # 从IP池中随机获取一个代理IP
         res = requests.get(self.url, headers=header,
                            proxies={'http': 'http://{0}:{1}'.format(random_proxy['ip'], random_proxy['port'])})
         data = json.loads(res.text[(res.text.find("(") + 1):-1])
@@ -54,17 +61,17 @@ class Xiami(object):
         num = int(location[0])
         # print(num)
         location_new = location[1:]
-        l = 1
+        # TODO: 如果缺少，那么后面几行各空一位，那么少一位的行总数为：(num - normal_num)
+        l = 1  # 使用这个变量来保持少一位的末尾数
         if int(len(location_new) / num) == len(location_new) / num:
             step = int(len(location_new) / num)
             normal_num = num
-            # print('normal')
+            # print('normal')  # 表示可以整除，不需要进行少一行操作
         else:
             # print('abnormal')
             step = int(len(location_new) / num) + 1
             normal_num = num - (step * num - len(location_new))
             # print(step, normal_num)
-            # TODO: 如果缺少，那么后面几行各空一位，那么少一位的行总数为：(num - len(location_new) % num)
         matrix = []
         for i in range(num):
             s = []
@@ -77,7 +84,7 @@ class Xiami(object):
                 # print(j, step * (i + 1) - l)
                 for k in range(j, step * (i + 1) - l):
                     s.append(location_new[k])
-                s.append("#")
+                s.append("#")  # 为了使用numpy的切片功能，这里先补充一个非urlcode字符填充以保持每行长度相同
                 j = k + 1
                 l += 1
             # print(s)
@@ -91,10 +98,10 @@ class Xiami(object):
         url = ''
         for i in range(len(matrix[0])):
             tmp = "".join(tem[:, i])
-            tmp = "".join([k for k in tmp if k != "#"])
+            tmp = "".join([k for k in tmp if k != "#"])  # 这里再把之前的标记去掉
             url += tmp
         # print(url)
-        url = "https:" + urllib.parse.unquote(url).replace("^", '0')
+        url = "https:" + urllib.parse.unquote(url).replace("^", '0')  # urlcode解码之后的^表示数字0
         # print(url)
         return url
 
