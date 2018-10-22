@@ -29,6 +29,7 @@ header = {
 
 class Xiami(object):
     def __init__(self, url):
+        # TODO: 使用scylla包获取代理IP池（已解决）
         self.proxy_list = requests.get("http://localhost:8899/api/v1/proxies").json()  # 这里使用了Python3.6专用的代理IP包scylla，具体操作请看use_scylla.md
         self.path = '/home/hujiaming/Music/'  # 本地存储路径（后面带"/"）
         self.url = url
@@ -46,6 +47,7 @@ class Xiami(object):
             self.download(url)
 
     def _get_location(self):
+        # TODO: 从url中获取到location(歌曲url通过凯撒矩阵加密后的值)和歌曲名称（已解决）
         random_proxy = random.choice(self.proxy_list['proxies'])  # 从IP池中随机获取一个代理IP
         res = requests.get(self.url, headers=header,
                            proxies={'http': 'http://{0}:{1}'.format(random_proxy['ip'], random_proxy['port'])})
@@ -61,7 +63,7 @@ class Xiami(object):
         num = int(location[0])
         # print(num)
         location_new = location[1:]
-        # TODO: 如果缺少，那么后面几行各空一位，那么少一位的行总数为：(num - normal_num)
+        # TODO: 如果缺少，那么后面几行各空一位，那么少一位的行总数为：(num - normal_num)（已解决）
         l = 1  # 使用这个变量来保持少一位的末尾数
         if int(len(location_new) / num) == len(location_new) / num:
             step = int(len(location_new) / num)
@@ -93,6 +95,7 @@ class Xiami(object):
         return matrix
 
     def _from_matrix_to_url(self, matrix):
+        # TODO： 解密凯撒矩阵，获取最终歌曲url（已解决）
         # print(matrix)
         tem = np.array(matrix)
         url = ''
@@ -106,6 +109,7 @@ class Xiami(object):
         return url
 
     def download(self, url):
+        # TODO：实现下载功能
         random_proxy = random.choice(self.proxy_list['proxies'])
         with open(self.path + self.name + ".mp3", 'wb') as f:
             f.write(requests.get(url, headers=header, proxies={
@@ -114,7 +118,7 @@ class Xiami(object):
 
 
 if __name__ == '__main__':
-    # TODO: 使用scylla抓以下代理IP，然后去搞，解除封禁IP的风险
+    # TODO: 使用scylla抓以下代理IP，然后去搞，解除封禁IP的风险(已解决)
     xiami = Xiami(
         'https://www.xiami.com/song/playlist/id/1806304949/object_name/default/object_id/0/cat/json?_ksTS=1540236428450_2563&callback=jsonp2564')
     xiami.run()
